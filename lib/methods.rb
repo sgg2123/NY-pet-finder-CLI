@@ -1,20 +1,22 @@
 require 'rest-client'
 require 'json'
 require 'pry'
+require 'colorize'
 
 def welcome
-  puts "Hi do you want a pet? you're in the right place bc we have pets"
+  puts "----------------------------------------------------".blue
+  puts "Welcome!".blue
+  puts "----------------------------------------------------".bluec
 end
 
 def find_or_create_user
-  puts "Please enter your first and last name."
+  puts "Please enter your first and last name.".blue
+  puts "----------------------------------------------------".blue
   input = gets.chomp
-  if !User.all.find_by(name: input)
-    username = User.create(name: input)
-  else
-    username = User.all.find_by(name: input)
-  end
-  puts "Welcome #{username.name}. Your UserId is #{username.id}."
+  username = User.find_or_create_by(name: input)
+  puts "\n"
+  puts "Welcome #{username.name}. Your UserId is #{username.id}.".blue
+  puts "\n"
   username.id
 end
 
@@ -67,7 +69,8 @@ end
 # end
 
 def pet_type_menu(borough)
-  puts "Would you like to search for dogs or cats?"
+  puts "Would you like to search for dogs or cats?".blue
+  puts "----------------------------------------------------".blue
   puts "1 - Dogs"
   puts "2 - Cats"
   type_input = gets.chomp
@@ -80,69 +83,54 @@ def pet_type_menu(borough)
       data = make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&animal=cat&location=#{to_interpolate}&format=json")
     end
   else
-    puts "Invalid input - please select one of the options above"
+    puts "Invalid input - please select one of the options above".red
     pet_type_menu(nil)
   end
 end
 
-# def shelter_menu
-#   puts "Please select an NYC borough for your pet search"
-#   puts "1 - Manhattan"
-#   puts "2 - Brooklyn"
-#   puts "3 - The Bronx"
-#   puts "4 - Queens/Long Island"
-#   puts "5 - Staten Island"
-#   input = gets.chomp
-#   if valid_input?(input, 5)
-#     if input == "1"
-#       puts "You have selected Manhattan."
-#       pet_type_menu("Manhattan")
-#     elsif input == "2"
-#       puts "You have selected Brooklyn."
-#       pet_type_menu("Brooklyn")
-#     elsif input == "3"
-#       puts "You have selected The Bronx."
-#       pet_type_menu("The Bronx")
-#     elsif input == "4"
-#       puts "You have selected Queens/ Long Island"
-#       pet_type_menu("Queens")
-#     else
-#       puts "You have selected Staten Island"
-#       pet_type_menu("Staten Island")
-#     end
-#   else
-#     puts "Invalid input - please select one of the options above"
-#     shelter_menu
-#   end
-# end
-
 def location_menu
-  puts "Please select an NYC borough for your pet search"
+  puts "Please select an NYC borough for your pet search".blue
+  puts "----------------------------------------------------".blue
   puts "1 - Manhattan"
   puts "2 - Brooklyn"
   puts "3 - The Bronx"
   puts "4 - Queens/Long Island"
   puts "5 - Staten Island"
+  puts "6 - exit"
   input = gets.chomp
-  if valid_input?(input, 5)
+  if valid_input?(input, 6)
     if input == "1"
-      puts "You have selected Manhattan."
+      puts "\n"
+      puts "You have selected Manhattan.".blue
+      puts "----------------------------------------------------".blue
       shelter_menu("Manhattan")
     elsif input == "2"
-      puts "You have selected Brooklyn."
+      puts "\n"
+      puts "You have selected Brooklyn.".blue
+      puts "----------------------------------------------------".blue
       shelter_menu("Brooklyn")
     elsif input == "3"
-      puts "You have selected The Bronx."
+      puts "\n"
+      puts "You have selected The Bronx.".blue
+      puts "----------------------------------------------------".blue
       shelter_menu("The Bronx")
     elsif input == "4"
-      puts "You have selected Queens/ Long Island"
+      puts "\n"
+      puts "You have selected Queens/ Long Island".blue
+      puts "----------------------------------------------------".blue
       shelter_menu("Queens")
-    else
-      puts "You have selected Staten Island"
+    elsif input == "5"
+      puts "\n"
+      puts "You have selected Staten Island".blue
+      puts "----------------------------------------------------".blue
       shelter_menu("Staten Island")
+    else
+      puts "Goodbye!".blue
+      puts "\n"
+      exit!
     end
   else
-    puts "Invalid input - please select one of the options above"
+    puts "Invalid input - please select a valid option.".red
     location_menu
   end
 end
@@ -165,6 +153,10 @@ def display_shelter_name(hash)
       #binding.pry
     end
   end
+  puts "#{counter} - Main Menu"
+  puts "\n"
+  puts "#{counter + 1} - Exit Program"
+  puts "\n"
   results_hash
 end
 
@@ -204,15 +196,30 @@ def display_pet_name(hash)
       #binding.pry
     end
   end
+  puts "#{counter} - Main Menu"
+  puts "\n"
+  puts "#{counter + 1} - Exit Program"
+  puts "\n"
   results_hash
 end
 
 def get_shelter_selection(shelter_id_hash)
-  puts "Please select a shelter by number to view all pets available at that location"
+  puts "Please select a shelter by number to view all pets available at that location".blue
+  puts "----------------------------------------------------".blue
   shelter_selection = gets.chomp
-  if valid_input?(shelter_selection, 25)
-    shelter_id_hash[shelter_selection.to_i]
+  if valid_input?(shelter_selection, shelter_id_hash.length+2)
+    if shelter_selection.to_i.between?(1,shelter_id_hash.length)
+      shelter_id_hash[shelter_selection.to_i]
+    elsif shelter_selection.to_i == shelter_id_hash.length+1
+      puts "Returning to main menu".blue
+      puts "----------------------------------------------------".blue
+      puts "\n"
+      location_menu
+    else
+      exit!
+    end
   else
+    puts "Invalid selection, please select a valid option.".red
     get_shelter_selection(shelter_id_hash)
   end
 end
@@ -221,14 +228,24 @@ def get_pets_from_shelter(shelter_id)
   make_request("http://api.petfinder.com/shelter.getPets?key=1201cf858e44c5465a854617015774a5&id=#{shelter_id}&format=json")
 end
 
-
 def get_pet_selection(pet_id_hash)
-  puts "Please select a pet by number to view more details for this pet"
+  puts "Please select a pet by number to view more details for this pet".blue
+  puts "----------------------------------------------------".blue
   pet_selection = gets.chomp
-  if valid_input?(pet_selection, pet_id_hash.length)
-    pet_id_hash[pet_selection.to_i]
+  if valid_input?(pet_selection, pet_id_hash.length+2)
+    if valid_input?(pet_selection, pet_id_hash.length)
+      pet_id_hash[pet_selection.to_i]
+    elsif pet_selection.to_i == pet_id_hash.length+1
+      puts "Returning to main menu".blue
+      puts "----------------------------------------------------".blue
+      puts "\n"
+      location_menu
+    else
+      exit!
+    end
   else
-    pet_id_hash(pet_id_hash)
+    puts "Invalid selection, please select a valid option.".red
+    get_pet_selection(pet_id_hash)
   end
 end
 
@@ -251,15 +268,36 @@ def display_detailed_pet_info(hash)
   puts "-- street address: #{is_nil?(hash["petfinder"]["pet"]["contact"]["address"])}"
 end
 
-def do_you_want_to_save?(user_id, pet_id)
-  puts "Would you like to save this pet?"
+def do_you_want_to_save?(user_id, pet_id, shelter_id)
+  puts "Would you like to save this pet?".blue
+  puts "----------------------------------------------------".blue
   puts "1 - Yes"
   puts "2 - No"
+  puts "/n"
   input = gets.chomp
   if valid_input?(input, 2)
-    save_a_pet(user_id, pet_id)
+    if input == "1"
+      save_a_pet(user_id, pet_id, shelter_id)
+    else
+      puts "Pet not saved. Would you like to view details for another pet from the list?".blue
+      puts "----------------------------------------------------".blue
+      puts "1 - Yes (go back)"
+      puts "2 - No (exit)"
+      second_input = gets.chomp
+        if valid_input?(second_input, 2)
+          if second_input == "1"
+            get_pets_from_shelter(shelter_id)
+          else
+            puts "Returning to the main menu".blue
+            puts "----------------------------------------------------".blue
+            puts "\n"
+            location_menu
+          end
+        end
+    end
   else
-    puts "Alrighty then. WE HAVE TO GO BACK"
+    puts "Invalid input - please select a valid option.".red
+    do_you_want_to_save?(user_id, pet_id)
   end
 end
 
@@ -271,36 +309,46 @@ def is_nil?(values)
   end
 end
 
-def save_a_pet(user_id, pet_id)
+def save_a_pet(user_id, pet_id, shelter_id)
   pet_data = make_request("http://api.petfinder.com/pet.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_id}&format=json")
 
-  saved_pet = Pet.new(
-    name: is_nil?(pet_data["petfinder"]["pet"]["name"]),
-    animal_type: is_nil?(pet_data["petfinder"]["pet"]["animal"]),
-    age: is_nil?(pet_data["petfinder"]["pet"]["age"]),
-    sex: is_nil?(pet_data["petfinder"]["pet"]["sex"]),
-    size: is_nil?(pet_data["petfinder"]["pet"]["size"]),
-    last_update: is_nil?(pet_data["petfinder"]["pet"]["lastUpdate"]),
-    description: is_nil?(pet_data["petfinder"]["pet"]["description"]),
-    contact_phone: is_nil?(pet_data["petfinder"]["pet"]["contact"]["phone"]),
-    email: is_nil?(pet_data["petfinder"]["pet"]["contact"]["email"]),
-    shelter_number: is_nil?(pet_data["petfinder"]["pet"]["shelterId"])
+  pet_data_hash = pet_data["petfinder"]["pet"]
+
+  saved_pet = Pet.find_or_create_by(
+    name: is_nil?(pet_data_hash["name"]),
+    animal_type: is_nil?(pet_data_hash["animal"]),
+    age: is_nil?(pet_data_hash["age"]),
+    sex: is_nil?(pet_data_hash["sex"]),
+    size: is_nil?(pet_data_hash["size"]),
+    last_update: is_nil?(pet_data_hash["lastUpdate"]),
+    description: is_nil?(pet_data_hash["description"]),
+    contact_phone: is_nil?(pet_data_hash["contact"]["phone"]),
+    email: is_nil?(pet_data_hash["contact"]["email"]),
+    shelter_number: is_nil?(pet_data_hash["shelterId"])
   )
 
+  breed_values =  pet_data_hash["breeds"]["breed"]
+  if breed_values.class == Array
+    breed_values.each {|breed| saved_pet.breeds << Breed.find_or_create_by(name: "#{array["$t"]}")}
+  else
+    saved_pet.breeds << Breed.find_or_create_by(name: "#{breed_values["$t"]}")
+  end
+
   shelter_data = make_request("http://api.petfinder.com/shelter.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_data["petfinder"]["pet"]["shelterId"]["$t"]}&format=json")
-  saved_shelter = Shelter.new(
-    shelter_number: is_nil?(shelter_data["petfinder"]["shelter"]["id"]),
-    name: is_nil?(shelter_data["petfinder"]["shelter"]["name"]),
-    street_address: is_nil?(shelter_data["petfinder"]["shelter"]["address1"]),
-    street_address_2: is_nil?(shelter_data["petfinder"]["shelter"]["address2"]),
-    city: is_nil?(shelter_data["petfinder"]["shelter"]["city"]),
-    state: is_nil?(shelter_data["petfinder"]["shelter"]["state"]),
-    phone: is_nil?(shelter_data["petfinder"]["shelter"]["phone"]),
-    email: is_nil?(shelter_data["petfinder"]["shelter"]["email"])
+  shelter_data_hash = shelter_data["petfinder"]["shelter"]
+
+  saved_shelter = Shelter.find_or_create_by(
+    shelter_number: is_nil?(shelter_data_hash["id"]),
+    name: is_nil?(shelter_data_hash["name"]),
+    street_address: is_nil?(shelter_data_hash["address1"]),
+    street_address_2: is_nil?(shelter_data_hash["address2"]),
+    city: is_nil?(shelter_data_hash["city"]),
+    state: is_nil?(shelter_data_hash["state"]),
+    phone: is_nil?(shelter_data_hash["phone"]),
+    email: is_nil?(shelter_data_hash["email"])
   )
 
   saved_pet.shelter = saved_shelter
 
   User.find_by(id: user_id).pets << saved_pet
-  binding.pry
 end
