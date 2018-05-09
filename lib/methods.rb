@@ -2,6 +2,7 @@ require 'rest-client'
 require 'json'
 require 'pry'
 require 'colorize'
+require 'terminal-table'
 
 def welcome
   puts "----------------------------------------------------".blue
@@ -21,13 +22,12 @@ def find_or_create_user
 end
 
 def make_request(url)
-  #make the web request
   all_characters = RestClient.get(url)
   JSON.parse(all_characters)
 end
 
 def valid_input?(input, max_num)
-  if input.to_i.between?(1,max_num)
+  if input.to_i.between?(1, max_num)
     true
   else
     false
@@ -50,23 +50,6 @@ def borough_to_url_string(borough)
       "New%20York%20NY"
   end
 end
-
-# def main_menu
-#   puts "How would you like to search for a pet?"
-#   puts "1. Pet Type (i.e. dog, cat)"
-#   puts "2. Shelter Location by NYC Borough"
-#   input = gets.chomp
-#   if valid_input?(input, 2)
-#     if input == "1"
-#       pet_type_menu
-#     else
-#       shelter_menu
-#     end
-#   else
-#     puts "Invalid input - please select one of the options above"
-#     main_menu
-#   end
-# end
 
 def pet_type_menu(borough)
   puts "Would you like to search for dogs or cats?".blue
@@ -125,8 +108,8 @@ def location_menu
       puts "----------------------------------------------------".blue
       shelter_menu("Staten Island")
     else
-      puts "Goodbye!".blue
       puts "\n"
+      puts "Goodbye!".blue
       exit!
     end
   else
@@ -155,7 +138,7 @@ def display_shelter_name(hash)
   end
   puts "#{counter} - Main Menu"
   puts "\n"
-  puts "#{counter + 1} - Exit Program"
+  puts "#{counter + 1} - exit"
   puts "\n"
   results_hash
 end
@@ -198,7 +181,7 @@ def display_pet_name(hash)
   end
   puts "#{counter} - Main Menu"
   puts "\n"
-  puts "#{counter + 1} - Exit Program"
+  puts "#{counter + 1} - exit"
   puts "\n"
   results_hash
 end
@@ -216,6 +199,8 @@ def get_shelter_selection(shelter_id_hash)
       puts "\n"
       location_menu
     else
+      puts "\n"
+      puts "Goodbye!".blue
       exit!
     end
   else
@@ -241,6 +226,8 @@ def get_pet_selection(pet_id_hash)
       puts "\n"
       location_menu
     else
+      puts "\n"
+      puts "Goodbye!".blue
       exit!
     end
   else
@@ -329,7 +316,7 @@ def welcome_menu(user_id)
   puts "----------------------------------------------------".blue
   puts "1 - View Saved Data"
   puts "2 - Perform a Search"
-  puts "3 - Exit"
+  puts "3 - exit"
   welcome_menu_input = gets.chomp
   if valid_input?(welcome_menu_input, 3)
     if welcome_menu_input == "1"
@@ -337,6 +324,8 @@ def welcome_menu(user_id)
     elsif welcome_menu_input == "2"
       run_a_search(user_id)
     else
+      puts "\n"
+      puts "Goodbye!".blue
       exit!
     end
   else
@@ -395,20 +384,22 @@ def saved_menu(user_id)
   puts "What would you like to view?".blue
   puts "----------------------------------------------------".blue
   puts "1 - View Saved Pets"
-  puts "2 - View Breeds of Saved Pets"
-  puts "3 - View Shelters for Saved Pets"
-  puts "4 - Main Menu"
+  puts "2 - View Shelters for Saved Pets"
+  puts "3 - Main Menu"
+  puts "4 - exit"
   puts "\n"
   saved_menu_input = gets.chomp
   if valid_input?(saved_menu_input, 4)
     if saved_menu_input == "1"
       view_saved_pets(user_id)
     elsif saved_menu_input == "2"
-      view_saved_breeds(user_id)
-    elsif saved_menu_input == "3"
       view_saved_shelters(user_id)
-    else
+    elsif saved_menu_input == "3"
       welcome_menu(user_id)
+    else
+      puts "\n"
+      puts "Goodbye!".blue
+      exit!
     end
   end
 
@@ -417,22 +408,59 @@ end
 
 def view_saved_pets(user_id)
   user = User.find(user_id)
-  puts user.pets
-  #if user selects see my saved pets, run this Pet.all method
-end
-
-def view_saved_breeds(user_id)
-  user = User.find(user_id)
-  user.pets map do |pet|
-    pet.breeds
+  rows = []
+  user.pets.map do |pet|
+    rows << [pet.name, pet.animal_type, pet.sex, (pet.breeds.map {|breed| breed.name}).join(", "), pet.age, pet.size, pet.contact_phone, pet.email, pet.shelter.name]
   end
-  #if user selects see saved breeds, run this map method
+  #if user selects see my saved pets, run this Pet.all method
+  table = Terminal::Table.new :title => "SAVED PETS", :headings => ['Name', 'Type', 'Sex', 'Breeds', 'Age', 'Size', 'Phone #', 'Email', 'Shelter'], :rows => rows
+  puts "\n"
+  puts table
+  puts "\n"
+  puts "Would you like to view Shelters for Saved Pets or return to the main menu?"
+  puts "1 - View Shelters for Saved Pets"
+  puts "2 - Main Menu"
+  puts "3 - exit"
+  saved_pet_input = gets.chomp
+  if valid_input?(saved_pet_input, 3)
+    if saved_pet_input == "1"
+      view_saved_shelters(user_id)
+    elsif saved_pet_input == "2"
+      welcome_menu(user_id)
+    else
+      puts "\n"
+      puts "Goodbye!".blue
+      exit!
+    end
+  end
 end
 
 def view_saved_shelters(user_id)
   user = User.find(user_id)
-  user.pets map do |pet|
-    pet.shelter
+  rows = []
+  user.pets.map do |pet|
+    rows << [pet.shelter.name, pet.shelter.city, pet.shelter.state, pet.shelter.phone, pet.shelter.email]
+  end
+  #if user selects see my saved pets, run this Pet.all method
+  table = Terminal::Table.new :title => "SHELTERS FOR SAVED PETS", :headings => ['Shelter Name', 'City', 'State', 'Phone', 'Email'], :rows => rows
+  puts "\n"
+  puts table
+  puts "\n"
+  puts "Would you like to view Saved Pets or return to the Main Menu?"
+  puts "1 - View Saved Pets"
+  puts "2 - Main Menu"
+  puts "3 - exit"
+  saved_shelter_input = gets.chomp
+  if valid_input?(saved_shelter_input, 3)
+    if saved_shelter_input == "1"
+      view_saved_pets(user_id)
+    elsif saved_shelter_input == "2"
+      welcome_menu(user_id)
+    else
+      puts "\n"
+      puts "Goodbye!".blue
+      exit!
+    end
   end
   #if user selects see saved shelters, run this map method
 end
