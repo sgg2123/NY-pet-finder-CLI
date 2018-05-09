@@ -21,6 +21,31 @@ def find_or_create_user
   username.id
 end
 
+def welcome_menu(user_id)
+  puts "Would you like to perform a search or view your saved pets?".blue
+  puts "----------------------------------------------------".blue
+  puts "1 - View Saved Data"
+  puts "2 - Perform a Search"
+  puts "3 - exit"
+  welcome_menu_input = gets.chomp
+  if valid_input?(welcome_menu_input, 3)
+    if welcome_menu_input == "1"
+      saved_menu(user_id)
+    elsif welcome_menu_input == "2"
+      define_the_search(user_id)
+    else
+      puts "\n"
+      puts "Goodbye!".blue
+      exit!
+    end
+  else
+    puts "Invalid input - please select one of the options above".red
+    welcome_menu(user_id)
+  end
+end
+
+############################## SEARCH STUFF ####################################
+
 def make_request(url)
   all_characters = RestClient.get(url)
   JSON.parse(all_characters)
@@ -51,25 +76,27 @@ def borough_to_url_string(borough)
   end
 end
 
-def pet_type_menu(borough)
-  puts "Would you like to search for dogs or cats?".blue
-  puts "----------------------------------------------------".blue
-  puts "1 - Dogs"
-  puts "2 - Cats"
-  type_input = gets.chomp
-  if valid_input?(type_input, 2)
-    if type_input == "1"
-      to_interpolate = borough_to_url_string(borough)
-      data = make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&animal=dog&location=#{to_interpolate}&format=json")
-    else
-      to_interpolate = borough_to_url_string(borough)
-      data = make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&animal=cat&location=#{to_interpolate}&format=json")
-    end
-  else
-    puts "Invalid input - please select one of the options above".red
-    pet_type_menu(borough)
-  end
+def run_a_search_by_location(user_id)
+  hash = location_menu
+  shelter_id_hash = display_shelter_name(hash)
+  shelter_id = get_shelter_selection(user_id, shelter_id_hash)
+  pet_hash = get_pets_from_shelter(shelter_id)
+  pet_id_hash = display_pet_name(pet_hash)
+  pet_id = get_pet_selection(user_id, pet_id_hash)
+  specific_pet_hash = get_specific_pet_record(pet_id)
+  display_detailed_pet_info(specific_pet_hash)
+  do_you_want_to_save?(user_id, pet_id)
 end
+
+def run_a_search_by_pet_type(user_id)
+  hash = pet_type_menu
+  pet_id_hash = display_pet_name(hash)
+  pet_id = get_pet_selection(user_id, pet_id_hash)
+  specific_pet_hash = get_specific_pet_record(pet_id)
+  display_detailed_pet_info(specific_pet_hash)
+  do_you_want_to_save?(user_id, pet_id)
+end
+
 
 def location_menu
   puts "Please select an NYC borough for your pet search".blue
@@ -133,7 +160,6 @@ def display_shelter_name(hash)
       puts "-- zip: #{array["zip"]["$t"]}"
       puts "\n"
       counter += 1
-      #binding.pry
     end
   end
   puts "#{counter} - Main Menu"
@@ -166,7 +192,6 @@ def display_pet_name(hash)
   results_hash = {}
   hash["petfinder"]["pets"].map do |pet, returned_array|
     returned_array.map do |array|
-      # binding.pry
       results_hash[counter] = array["id"]["$t"]
       puts "#{counter}. #{array["name"]["$t"]}"
       puts "-- type: #{array["animal"]["$t"]}"
@@ -176,7 +201,6 @@ def display_pet_name(hash)
       puts "-- age: #{array["age"]["$t"]}"
       puts "\n"
       counter += 1
-      #binding.pry
     end
   end
   puts "#{counter} - Main Menu"
@@ -186,7 +210,7 @@ def display_pet_name(hash)
   results_hash
 end
 
-def get_shelter_selection(shelter_id_hash)
+def get_shelter_selection(user_id, shelter_id_hash)
   puts "Please select a shelter by number to view all pets available at that location".blue
   puts "----------------------------------------------------".blue
   shelter_selection = gets.chomp
@@ -197,7 +221,7 @@ def get_shelter_selection(shelter_id_hash)
       puts "Returning to main menu".blue
       puts "----------------------------------------------------".blue
       puts "\n"
-      location_menu
+      welcome_menu(user_id)
     else
       puts "\n"
       puts "Goodbye!".blue
@@ -205,7 +229,7 @@ def get_shelter_selection(shelter_id_hash)
     end
   else
     puts "Invalid selection, please select a valid option.".red
-    get_shelter_selection(shelter_id_hash)
+    get_shelter_selection(user_id, shelter_id_hash)
   end
 end
 
@@ -213,7 +237,7 @@ def get_pets_from_shelter(shelter_id)
   make_request("http://api.petfinder.com/shelter.getPets?key=1201cf858e44c5465a854617015774a5&id=#{shelter_id}&format=json")
 end
 
-def get_pet_selection(pet_id_hash)
+def get_pet_selection(user_id, pet_id_hash)
   puts "Please select a pet by number to view more details for this pet".blue
   puts "----------------------------------------------------".blue
   pet_selection = gets.chomp
@@ -224,7 +248,7 @@ def get_pet_selection(pet_id_hash)
       puts "Returning to main menu".blue
       puts "----------------------------------------------------".blue
       puts "\n"
-      location_menu
+      welcome_menu(user_id)
     else
       puts "\n"
       puts "Goodbye!".blue
@@ -232,7 +256,7 @@ def get_pet_selection(pet_id_hash)
     end
   else
     puts "Invalid selection, please select a valid option.".red
-    get_pet_selection(pet_id_hash)
+    get_pet_selection(user_id, pet_id_hash)
   end
 end
 
@@ -255,7 +279,7 @@ def display_detailed_pet_info(hash)
   puts "-- street address: #{is_nil?(hash["petfinder"]["pet"]["contact"]["address"])}"
 end
 
-def do_you_want_to_save?(user_id, pet_id, shelter_id)
+def do_you_want_to_save?(user_id, pet_id)
   puts "Would you like to save this pet?".blue
   puts "----------------------------------------------------".blue
   puts "1 - Yes"
@@ -264,26 +288,14 @@ def do_you_want_to_save?(user_id, pet_id, shelter_id)
   input = gets.chomp
   if valid_input?(input, 2)
     if input == "1"
-      save_a_pet(user_id, pet_id, shelter_id)
+      save_a_pet(user_id, pet_id)
       puts "Pet saved! Returning to the main menu.".blue
       puts "----------------------------------------------------".blue
       welcome_menu(user_id)
     else
-      puts "Pet not saved. Would you like to view details for another pet from the list?".blue
+      puts "Pet not saved. Returning to the main menu.".blue
       puts "----------------------------------------------------".blue
-      puts "1 - Yes (go back)"
-      puts "2 - No (exit)"
-      second_input = gets.chomp
-        if valid_input?(second_input, 2)
-          if second_input == "1"
-            get_pets_from_shelter(shelter_id)
-          else
-            puts "Returning to the main menu".blue
-            puts "----------------------------------------------------".blue
-            puts "\n"
-            welcome_menu(user_id)
-          end
-        end
+      welcome_menu(user_id)
     end
   else
     puts "Invalid input - please select a valid option.".red
@@ -299,42 +311,7 @@ def is_nil?(values)
   end
 end
 
-def run_a_search(user_id)
-  hash = location_menu
-  shelter_id_hash = display_shelter_name(hash)
-  shelter_id = get_shelter_selection(shelter_id_hash)
-  pet_hash = get_pets_from_shelter(shelter_id)
-  pet_id_hash = display_pet_name(pet_hash)
-  pet_id = get_pet_selection(pet_id_hash)
-  specific_pet_hash = get_specific_pet_record(pet_id)
-  display_detailed_pet_info(specific_pet_hash)
-  do_you_want_to_save?(user_id, pet_id, shelter_id)
-end
-
-def welcome_menu(user_id)
-  puts "Would you like to perform a search or view your saved pets?".blue
-  puts "----------------------------------------------------".blue
-  puts "1 - View Saved Data"
-  puts "2 - Perform a Search"
-  puts "3 - exit"
-  welcome_menu_input = gets.chomp
-  if valid_input?(welcome_menu_input, 3)
-    if welcome_menu_input == "1"
-      saved_menu(user_id)
-    elsif welcome_menu_input == "2"
-      run_a_search(user_id)
-    else
-      puts "\n"
-      puts "Goodbye!".blue
-      exit!
-    end
-  else
-    puts "Invalid input - please select one of the options above".red
-    welcome_menu(user_id)
-  end
-end
-
-def save_a_pet(user_id, pet_id, shelter_id)
+def save_a_pet(user_id, pet_id)
   pet_data = make_request("http://api.petfinder.com/pet.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_id}&format=json")
 
   pet_data_hash = pet_data["petfinder"]["pet"]
@@ -378,7 +355,101 @@ def save_a_pet(user_id, pet_id, shelter_id)
   User.find_by(id: user_id).pets << saved_pet
 end
 
-###### SAVED STUFF ######
+def define_the_search(user_id)
+  puts "Would you like to search the NYC area by pet type or search pets by shelters in an NYC borough?"
+  puts "1 - Search by Pet Type"
+  puts "2 - Search by Borough"
+  search_request_input = gets.chomp
+  if valid_input?(search_request_input, 2)
+    if search_request_input == "1"
+      run_a_search_by_pet_type(user_id)
+    else
+      run_a_search_by_location(user_id)
+    end
+  else
+    puts "Invalid input - please select one of the options above".red
+    define_the_search(user_id)
+  end
+
+end
+
+
+def pet_type_menu
+  puts "Would you like to search for dogs or cats?".blue
+  puts "----------------------------------------------------".blue
+  puts "1 - Dogs"
+  puts "2 - Cats"
+  puts "3 - exit"
+  type_input = gets.chomp
+  if valid_input?(type_input, 3)
+    if type_input == "1"
+      narrow_your_search("dogs", "&animal=dog")
+    elsif type_input == "2"
+      narrow_your_search("cats", "&animal=cat")
+    else
+      puts "\nGoodbye!".blue
+      exit!
+    end
+  else
+    puts "Invalid input - please select one of the options above".red
+    pet_type_menu
+  end
+end
+
+def narrow_your_search(selection, type)
+  puts "You've selected #{selection}! Select a criteria to narrow your search -"
+  puts "1 - Age (Baby, Young, Adult, Senior)"
+  puts "2 - Sex (M, F)"
+  puts "3 - Size (S, M, L, XL)"
+  puts "4 - Breed (Select from List)"
+  puts "5 - Don't narrow my search! Display Top 25 Pets in the NYC Area"
+  selection_input = gets.chomp
+  if valid_input?(selection_input, 5)
+    case selection_input
+      when "1"
+        select_age_option(type)
+      when "2"
+        select_sex_option(type)
+      when "3"
+        select_size_option(type)
+      when "4"
+        puts "skipping breed for now"
+      when "5"
+        make_generic_pet_request(type)
+      end
+    end
+
+end
+
+def make_generic_pet_request(type)
+  make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&format=json")
+end
+
+def select_age_option(type)
+  puts "Please enter one of the following options: \n Baby, Young, Adult, Senior"
+  age_selection = gets.chomp
+  if age_selection.downcase == "baby" || age_selection.downcase == "young" || age_selection.downcase == "adult" || age_selection.downcase == "senior"
+    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&age=#{age_selection.downcase.capitalize}&format=json")
+  end
+end
+
+def select_size_option(type)
+  puts "Please enter one of the following options: \n S, M, L, XL"
+  size_selection = gets.chomp
+  if size_selection.upcase == "S" || size_selection.upcase  == "M" || size_selection.upcase  == "L" || size_selection.upcase  == "XL"
+    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&size=#{size_selection.upcase}&format=json")
+  end
+end
+
+def select_sex_option(type)
+  puts "Please enter one of the following options: \n M, F"
+  sex_selection = gets.chomp
+  if sex_selection.upcase == "M" || sex_selection.upcase == "F"
+    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&sex=#{sex_selection.upcase}&format=json")
+  end
+end
+
+################# SAVED STUFF ##############################################
 
 def saved_menu(user_id)
   puts "What would you like to view?".blue
@@ -402,8 +473,6 @@ def saved_menu(user_id)
       exit!
     end
   end
-
-#when a user selects to view their saved stuff - ask them what they want to view?
 end
 
 def view_saved_pets(user_id)
@@ -412,7 +481,6 @@ def view_saved_pets(user_id)
   user.pets.map do |pet|
     rows << [pet.name, pet.animal_type, pet.sex, (pet.breeds.map {|breed| breed.name}).join(", "), pet.age, pet.size, pet.contact_phone, pet.email, pet.shelter.name]
   end
-  #if user selects see my saved pets, run this Pet.all method
   table = Terminal::Table.new :title => "SAVED PETS", :headings => ['Name', 'Type', 'Sex', 'Breeds', 'Age', 'Size', 'Phone #', 'Email', 'Shelter'], :rows => rows
   puts "\n"
   puts table
@@ -439,10 +507,9 @@ def view_saved_shelters(user_id)
   user = User.find(user_id)
   rows = []
   user.pets.map do |pet|
-    rows << [pet.shelter.name, pet.shelter.city, pet.shelter.state, pet.shelter.phone, pet.shelter.email]
+    rows << [pet.name, pet.shelter.name, pet.shelter.city, pet.shelter.state, pet.shelter.phone, pet.shelter.email]
   end
-  #if user selects see my saved pets, run this Pet.all method
-  table = Terminal::Table.new :title => "SHELTERS FOR SAVED PETS", :headings => ['Shelter Name', 'City', 'State', 'Phone', 'Email'], :rows => rows
+  table = Terminal::Table.new :title => "SHELTERS FOR SAVED PETS", :headings => ['Pet Name', 'Shelter Name', 'City', 'State', 'Phone', 'Email'], :rows => rows
   puts "\n"
   puts table
   puts "\n"
@@ -462,5 +529,4 @@ def view_saved_shelters(user_id)
       exit!
     end
   end
-  #if user selects see saved shelters, run this map method
 end
