@@ -3,30 +3,31 @@ require 'json'
 require 'pry'
 require 'colorize'
 require 'terminal-table'
+require 'launchy'
 
 def welcome
-  puts "----------------------------------------------------".blue
-  puts "Welcome!".blue
-  puts "----------------------------------------------------".blue
+  puts "-----------------------------------------".blue
+  puts "Welcome to the NYC Adoptable Pets Search!".blue
+  puts "-----------------------------------------".blue
 end
 
 def find_or_create_user
-  puts "Please enter your first and last name.".blue
-  puts "----------------------------------------------------".blue
+  puts "Please enter your name.".blue
+  puts "-----------------------".blue
   input = gets.chomp
   username = User.find_or_create_by(name: input)
-  puts "\n"
-  puts "Welcome #{username.name}. Your UserId is #{username.id}.".blue
-  puts "\n"
+  puts "\nWelcome #{username.name}. Your UserId is #{username.id}.\n".blue
   username.id
 end
 
 def welcome_menu(user_id)
+  puts "\n"
   puts "Would you like to perform a search or view your saved pets?".blue
-  puts "----------------------------------------------------".blue
+  puts "-----------------------------------------------------------".blue
   puts "1 - View Saved Data"
   puts "2 - Perform a Search"
   puts "3 - exit"
+  puts "\n"
   welcome_menu_input = gets.chomp
   if valid_input?(welcome_menu_input, 3)
     if welcome_menu_input == "1"
@@ -99,40 +100,42 @@ end
 
 
 def location_menu
-  puts "Please select an NYC borough for your pet search".blue
-  puts "----------------------------------------------------".blue
+  puts "\n"
+  puts "Please select an NYC borough for your pet search.".blue
+  puts "-------------------------------------------------".blue
   puts "1 - Manhattan"
   puts "2 - Brooklyn"
   puts "3 - The Bronx"
-  puts "4 - Queens/Long Island"
+  puts "4 - Queens"
   puts "5 - Staten Island"
   puts "6 - exit"
+  puts "\n"
   input = gets.chomp
   if valid_input?(input, 6)
     if input == "1"
       puts "\n"
       puts "You have selected Manhattan.".blue
-      puts "----------------------------------------------------".blue
+      puts "----------------------------".blue
       shelter_menu("Manhattan")
     elsif input == "2"
       puts "\n"
       puts "You have selected Brooklyn.".blue
-      puts "----------------------------------------------------".blue
+      puts "---------------------------".blue
       shelter_menu("Brooklyn")
     elsif input == "3"
       puts "\n"
       puts "You have selected The Bronx.".blue
-      puts "----------------------------------------------------".blue
+      puts "----------------------------".blue
       shelter_menu("The Bronx")
     elsif input == "4"
       puts "\n"
-      puts "You have selected Queens/ Long Island".blue
-      puts "----------------------------------------------------".blue
+      puts "You have selected Queens.".blue
+      puts "-------------------------".blue
       shelter_menu("Queens")
     elsif input == "5"
       puts "\n"
-      puts "You have selected Staten Island".blue
-      puts "----------------------------------------------------".blue
+      puts "You have selected Staten Island.".blue
+      puts "--------------------------------".blue
       shelter_menu("Staten Island")
     else
       puts "\n"
@@ -190,6 +193,9 @@ end
 def display_pet_name(hash)
   counter = 1
   results_hash = {}
+  puts "\n"
+  puts "Here is your selected list of pets.".blue
+  puts "-----------------------------------".blue
   hash["petfinder"]["pets"].map do |pet, returned_array|
     returned_array.map do |array|
       results_hash[counter] = array["id"]["$t"]
@@ -212,14 +218,14 @@ end
 
 def get_shelter_selection(user_id, shelter_id_hash)
   puts "Please select a shelter by number to view all pets available at that location".blue
-  puts "----------------------------------------------------".blue
+  puts "-----------------------------------------------------------------------------".blue
   shelter_selection = gets.chomp
   if valid_input?(shelter_selection, shelter_id_hash.length+2)
     if shelter_selection.to_i.between?(1,shelter_id_hash.length)
       shelter_id_hash[shelter_selection.to_i]
     elsif shelter_selection.to_i == shelter_id_hash.length+1
       puts "Returning to main menu".blue
-      puts "----------------------------------------------------".blue
+      puts "----------------------".blue
       puts "\n"
       welcome_menu(user_id)
     else
@@ -239,14 +245,14 @@ end
 
 def get_pet_selection(user_id, pet_id_hash)
   puts "Please select a pet by number to view more details for this pet".blue
-  puts "----------------------------------------------------".blue
+  puts "---------------------------------------------------------------".blue
   pet_selection = gets.chomp
   if valid_input?(pet_selection, pet_id_hash.length+2)
     if valid_input?(pet_selection, pet_id_hash.length)
       pet_id_hash[pet_selection.to_i]
     elsif pet_selection.to_i == pet_id_hash.length+1
       puts "Returning to main menu".blue
-      puts "----------------------------------------------------".blue
+      puts "----------------------".blue
       puts "\n"
       welcome_menu(user_id)
     else
@@ -265,6 +271,9 @@ def get_specific_pet_record(pet_id)
 end
 
 def display_detailed_pet_info(hash)
+  puts "\n"
+  puts "Here are the details for your selected pet.".blue
+  puts "-------------------------------------------".blue
   puts hash["petfinder"]["pet"]["name"]["$t"]
   puts "-- type: #{hash["petfinder"]["pet"]["animal"]["$t"]}"
   puts "-- breed(s): #{final_breed_array(hash["petfinder"]["pet"]["breeds"]["breed"])}"
@@ -277,11 +286,37 @@ def display_detailed_pet_info(hash)
   puts "-- phone: #{is_nil?(hash["petfinder"]["pet"]["contact"]["phone"])}"
   puts "-- email: #{is_nil?(hash["petfinder"]["pet"]["contact"]["email"])}"
   puts "-- street address: #{is_nil?(hash["petfinder"]["pet"]["contact"]["address"])}"
+
+
+  would_you_like_to_open_pictures?(hash)
+end
+
+def would_you_like_to_open_pictures?(hash)
+  puts "\n"
+  puts "Would you like to open a picture of this pet in your browser?".blue
+  puts "-------------------------------------------------------------".blue
+  puts "1 - Yes"
+  puts "2 - No"
+  puts "\n"
+  open_pics = gets.chomp
+  if valid_input?(open_pics, 2)
+    if open_pics == "1"
+      if hash["petfinder"]["pet"]["media"]["photos"]["photo"][2] == nil || !hash["petfinder"]["pet"]["media"]["photos"]["photo"][2] == [] || hash["petfinder"]["pet"]["media"]["photos"]["photo"][2] == {}
+        puts "No photos available"
+      else
+        Launchy.open(hash["petfinder"]["pet"]["media"]["photos"]["photo"][2]["$t"])
+      end
+    end
+  else
+    puts "Invalid selection, please select a valid option.".red
+    would_you_like_to_open_pictures?(hash)
+  end
 end
 
 def do_you_want_to_save?(user_id, pet_id)
+  puts "\n"
   puts "Would you like to save this pet?".blue
-  puts "----------------------------------------------------".blue
+  puts "--------------------------------".blue
   puts "1 - Yes"
   puts "2 - No"
   puts "\n"
@@ -289,12 +324,16 @@ def do_you_want_to_save?(user_id, pet_id)
   if valid_input?(input, 2)
     if input == "1"
       save_a_pet(user_id, pet_id)
+      puts "\n"
       puts "Pet saved! Returning to the main menu.".blue
-      puts "----------------------------------------------------".blue
+      puts "--------------------------------------".blue
+      puts "\n"
       welcome_menu(user_id)
     else
+      puts "\n"
       puts "Pet not saved. Returning to the main menu.".blue
-      puts "----------------------------------------------------".blue
+      puts "------------------------------------------".blue
+      puts "\n"
       welcome_menu(user_id)
     end
   else
@@ -356,9 +395,12 @@ def save_a_pet(user_id, pet_id)
 end
 
 def define_the_search(user_id)
-  puts "Would you like to search the NYC area by pet type or search pets by shelters in an NYC borough?"
+  puts "\n"
+  puts "Would you like to search the NYC area by pet type or search pets by shelters in an NYC borough?".blue
+  puts "-----------------------------------------------------------------------------------------------".blue
   puts "1 - Search by Pet Type"
   puts "2 - Search by Borough"
+  puts "\n"
   search_request_input = gets.chomp
   if valid_input?(search_request_input, 2)
     if search_request_input == "1"
@@ -375,11 +417,13 @@ end
 
 
 def pet_type_menu
+  puts "\n"
   puts "Would you like to search for dogs or cats?".blue
-  puts "----------------------------------------------------".blue
+  puts "------------------------------------------".blue
   puts "1 - Dogs"
   puts "2 - Cats"
   puts "3 - exit"
+  puts "\n"
   type_input = gets.chomp
   if valid_input?(type_input, 3)
     if type_input == "1"
@@ -397,12 +441,15 @@ def pet_type_menu
 end
 
 def narrow_your_search(selection, type)
-  puts "You've selected #{selection}! Select a criteria to narrow your search -"
+  puts "\n"
+  puts "You've selected #{selection}! Select a criteria to narrow your search:".blue
+  puts "--------------------------------------------------------------".blue
   puts "1 - Age (Baby, Young, Adult, Senior)"
   puts "2 - Sex (M, F)"
   puts "3 - Size (S, M, L, XL)"
   puts "4 - Breed (Select from List)"
   puts "5 - Don't narrow my search! Display Top 25 Pets in the NYC Area"
+  puts "\n"
   selection_input = gets.chomp
   if valid_input?(selection_input, 5)
     case selection_input
@@ -413,7 +460,7 @@ def narrow_your_search(selection, type)
       when "3"
         select_size_option(type)
       when "4"
-        puts "skipping breed for now"
+        select_breed_option(type)
       when "5"
         make_generic_pet_request(type)
       end
@@ -426,7 +473,9 @@ def make_generic_pet_request(type)
 end
 
 def select_age_option(type)
-  puts "Please enter one of the following options: \n Baby, Young, Adult, Senior"
+  puts "\n"
+  puts "Please enter one of the following options: Baby, Young, Adult, Senior".blue
+  puts "---------------------------------------------------------------------".blue
   age_selection = gets.chomp
   if age_selection.downcase == "baby" || age_selection.downcase == "young" || age_selection.downcase == "adult" || age_selection.downcase == "senior"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&age=#{age_selection.downcase.capitalize}&format=json")
@@ -434,7 +483,9 @@ def select_age_option(type)
 end
 
 def select_size_option(type)
-  puts "Please enter one of the following options: \n S, M, L, XL"
+  puts "\n"
+  puts "Please enter one of the following options: S, M, L, XL".blue
+  puts "------------------------------------------------------".blue
   size_selection = gets.chomp
   if size_selection.upcase == "S" || size_selection.upcase  == "M" || size_selection.upcase  == "L" || size_selection.upcase  == "XL"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&size=#{size_selection.upcase}&format=json")
@@ -442,18 +493,53 @@ def select_size_option(type)
 end
 
 def select_sex_option(type)
-  puts "Please enter one of the following options: \n M, F"
+  puts "\n"
+  puts "Please enter one of the following options: M, F".blue
+  puts "-----------------------------------------------".blue
   sex_selection = gets.chomp
   if sex_selection.upcase == "M" || sex_selection.upcase == "F"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&sex=#{sex_selection.upcase}&format=json")
   end
 end
 
+def select_breed_option(type)
+  breed_list = make_request("http://api.petfinder.com/breed.list?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY&#{type}&format=json")
+  counter_and_breed_hash = display_breed_list(breed_list)
+  puts "\n"
+  puts "Please enter a number for the breed you would like to search for".blue
+  puts "----------------------------------------------------------------".blue
+  breed_selection = gets.chomp
+  if valid_input?(breed_selection, counter_and_breed_hash.length)
+    if breed_selection.to_i.between?(1,counter_and_breed_hash.length)
+      make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&breed=#{change_breed_name_to_url_friendly(counter_and_breed_hash[breed_selection.to_i])}&format=json")
+    end
+  else
+    puts "Invalid selection, please select a valid option.".red
+    select_breed_option(type)
+  end
+end
+
+def display_breed_list(breed_list)
+  counter = 1
+  breed_list_hash = {}
+  breed_list["petfinder"]["breeds"]["breed"].map do |breed|
+    puts "#{counter}. #{breed["$t"]}"
+    breed_list_hash[counter] = breed["$t"]
+    counter+=1
+  end
+  breed_list_hash
+end
+
+def change_breed_name_to_url_friendly(selection)
+  selection.gsub(' ', '%20')
+end
+
 ################# SAVED STUFF ##############################################
 
 def saved_menu(user_id)
+  puts "\n"
   puts "What would you like to view?".blue
-  puts "----------------------------------------------------".blue
+  puts "----------------------------".blue
   puts "1 - View Saved Pets"
   puts "2 - View Shelters for Saved Pets"
   puts "3 - Main Menu"
@@ -485,10 +571,12 @@ def view_saved_pets(user_id)
   puts "\n"
   puts table
   puts "\n"
-  puts "Would you like to view Shelters for Saved Pets or return to the main menu?"
+  puts "Would you like to view Shelters for Saved Pets or return to the main menu?".blue
+  puts "--------------------------------------------------------------------------".blue
   puts "1 - View Shelters for Saved Pets"
   puts "2 - Main Menu"
   puts "3 - exit"
+  puts "\n"
   saved_pet_input = gets.chomp
   if valid_input?(saved_pet_input, 3)
     if saved_pet_input == "1"
@@ -513,10 +601,12 @@ def view_saved_shelters(user_id)
   puts "\n"
   puts table
   puts "\n"
-  puts "Would you like to view Saved Pets or return to the Main Menu?"
+  puts "Would you like to view Saved Pets or return to the Main Menu?".blue
+  puts "-------------------------------------------------------------".blue
   puts "1 - View Saved Pets"
   puts "2 - Main Menu"
   puts "3 - exit"
+  puts "\n"
   saved_shelter_input = gets.chomp
   if valid_input?(saved_shelter_input, 3)
     if saved_shelter_input == "1"
