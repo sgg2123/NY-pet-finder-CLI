@@ -11,13 +11,62 @@ def welcome
   puts "-----------------------------------------".blue
 end
 
-def find_or_create_user
-  puts "Please enter your name.".blue
-  puts "-----------------------".blue
+def sign_up_or_log_in
+  puts "\n"
+  puts "Is this your first time here or do you have a username?".blue
+  puts "-------------------------------------------------------".blue
+  puts "1 - Sign Up"
+  puts "2 - Login"
+  puts "3 - exit"
+  puts "\n"
+  sign_up_or_log_in_input = gets.chomp
+  if valid_input?(sign_up_or_log_in_input, 3)
+    if sign_up_or_log_in_input == "1"
+      create_new_user
+    elsif sign_up_or_log_in_input == "2"
+      find_existing_user
+    else
+      puts "\n"
+      puts "Goodbye!".blue
+      exit!
+    end
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    sign_up_or_log_in
+  end
+end
+
+def find_existing_user
+  puts "\n"
+  puts "Please enter your username. System is case sensitive.".blue
+  puts "-----------------------------------------------------".blue
   input = gets.chomp
-  username = User.find_or_create_by(name: input)
-  puts "\nWelcome #{username.name}. Your UserId is #{username.id}.\n".blue
-  username.id
+  if User.find_by(name: input)
+    username = User.find_by(name: input)
+    puts "\nWelcome back #{username.name}. Your UserId is #{username.id}.\n".blue
+    username.id
+  else
+    puts "\n"
+    puts "Username not found - please re-enter or sign up.".red
+    sign_up_or_log_in
+  end
+end
+
+def create_new_user
+  puts "\n"
+  puts "Please enter your desired username.".blue
+  puts "-----------------------------------".blue
+  input = gets.chomp
+  if !User.find_by(name: input)
+    username = User.create(name: input)
+    puts "\nWelcome #{username.name}. Your UserId is #{username.id}.\n".blue
+    username.id
+  else
+    puts "\n"
+    puts "Username already in use - please enter another.".red
+    sign_up_or_log_in
+  end
 end
 
 def welcome_menu(user_id)
@@ -40,7 +89,8 @@ def welcome_menu(user_id)
       exit!
     end
   else
-    puts "Invalid input - please select one of the options above".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     welcome_menu(user_id)
   end
 end
@@ -143,7 +193,8 @@ def location_menu
       exit!
     end
   else
-    puts "Invalid input - please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     location_menu
   end
 end
@@ -234,7 +285,8 @@ def get_shelter_selection(user_id, shelter_id_hash)
       exit!
     end
   else
-    puts "Invalid selection, please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     get_shelter_selection(user_id, shelter_id_hash)
   end
 end
@@ -244,6 +296,7 @@ def get_pets_from_shelter(shelter_id)
 end
 
 def get_pet_selection(user_id, pet_id_hash)
+  puts "\n"
   puts "Please select a pet by number to view more details for this pet".blue
   puts "---------------------------------------------------------------".blue
   pet_selection = gets.chomp
@@ -261,7 +314,8 @@ def get_pet_selection(user_id, pet_id_hash)
       exit!
     end
   else
-    puts "Invalid selection, please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     get_pet_selection(user_id, pet_id_hash)
   end
 end
@@ -308,7 +362,8 @@ def would_you_like_to_open_pictures?(hash)
       end
     end
   else
-    puts "Invalid selection, please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     would_you_like_to_open_pictures?(hash)
   end
 end
@@ -325,8 +380,8 @@ def do_you_want_to_save?(user_id, pet_id)
     if input == "1"
       save_a_pet(user_id, pet_id)
       puts "\n"
-      puts "Pet saved! Returning to the main menu.".blue
-      puts "--------------------------------------".blue
+      puts "Returning to the main menu.".blue
+      puts "---------------------------".blue
       puts "\n"
       welcome_menu(user_id)
     else
@@ -337,7 +392,8 @@ def do_you_want_to_save?(user_id, pet_id)
       welcome_menu(user_id)
     end
   else
-    puts "Invalid input - please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     do_you_want_to_save?(user_id, pet_id)
   end
 end
@@ -355,43 +411,56 @@ def save_a_pet(user_id, pet_id)
 
   pet_data_hash = pet_data["petfinder"]["pet"]
 
-  saved_pet = Pet.find_or_create_by(
-    name: is_nil?(pet_data_hash["name"]),
-    animal_type: is_nil?(pet_data_hash["animal"]),
-    age: is_nil?(pet_data_hash["age"]),
-    sex: is_nil?(pet_data_hash["sex"]),
-    size: is_nil?(pet_data_hash["size"]),
-    last_update: is_nil?(pet_data_hash["lastUpdate"]),
-    description: is_nil?(pet_data_hash["description"]),
-    contact_phone: is_nil?(pet_data_hash["contact"]["phone"]),
-    email: is_nil?(pet_data_hash["contact"]["email"]),
-    shelter_number: is_nil?(pet_data_hash["shelterId"])
-  )
+  # binding.pry
 
-  breed_values =  pet_data_hash["breeds"]["breed"]
-  if breed_values.class == Array
-    breed_values.each {|breed| saved_pet.breeds << Breed.find_or_create_by(name: "#{breed["$t"]}")}
+  if !Pet.find_by(api_pet_id: pet_id)
+    saved_pet = Pet.create(
+      name: is_nil?(pet_data_hash["name"]),
+      animal_type: is_nil?(pet_data_hash["animal"]),
+      age: is_nil?(pet_data_hash["age"]),
+      sex: is_nil?(pet_data_hash["sex"]),
+      size: is_nil?(pet_data_hash["size"]),
+      last_update: is_nil?(pet_data_hash["lastUpdate"]),
+      description: is_nil?(pet_data_hash["description"]),
+      contact_phone: is_nil?(pet_data_hash["contact"]["phone"]),
+      email: is_nil?(pet_data_hash["contact"]["email"]),
+      shelter_number: is_nil?(pet_data_hash["shelterId"]),
+      api_pet_id: pet_id
+    )
+
+    breed_values =  pet_data_hash["breeds"]["breed"]
+    if breed_values.class == Array
+      breed_values.each {|breed| saved_pet.breeds << Breed.find_or_create_by(name: "#{breed["$t"]}")}
+    else
+      saved_pet.breeds << Breed.find_or_create_by(name: "#{breed_values["$t"]}")
+    end
+
+    shelter_data = make_request("http://api.petfinder.com/shelter.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_data["petfinder"]["pet"]["shelterId"]["$t"]}&format=json")
+    shelter_data_hash = shelter_data["petfinder"]["shelter"]
+
+    saved_shelter = Shelter.find_or_create_by(
+      shelter_number: is_nil?(shelter_data_hash["id"]),
+      name: is_nil?(shelter_data_hash["name"]),
+      street_address: is_nil?(shelter_data_hash["address1"]),
+      street_address_2: is_nil?(shelter_data_hash["address2"]),
+      city: is_nil?(shelter_data_hash["city"]),
+      state: is_nil?(shelter_data_hash["state"]),
+      phone: is_nil?(shelter_data_hash["phone"]),
+      email: is_nil?(shelter_data_hash["email"])
+    )
+
+    saved_pet.shelter = saved_shelter
   else
-    saved_pet.breeds << Breed.find_or_create_by(name: "#{breed_values["$t"]}")
+    saved_pet = Pet.find_by(api_pet_id: pet_id)
   end
 
-  shelter_data = make_request("http://api.petfinder.com/shelter.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_data["petfinder"]["pet"]["shelterId"]["$t"]}&format=json")
-  shelter_data_hash = shelter_data["petfinder"]["shelter"]
+  if !User.find_by(id: user_id).pets.include?(saved_pet)
+    User.find_by(id: user_id).pets << saved_pet
+    puts "Pet saved!".blue
+  else
+    puts "You have already saved this pet.".blue
+  end
 
-  saved_shelter = Shelter.find_or_create_by(
-    shelter_number: is_nil?(shelter_data_hash["id"]),
-    name: is_nil?(shelter_data_hash["name"]),
-    street_address: is_nil?(shelter_data_hash["address1"]),
-    street_address_2: is_nil?(shelter_data_hash["address2"]),
-    city: is_nil?(shelter_data_hash["city"]),
-    state: is_nil?(shelter_data_hash["state"]),
-    phone: is_nil?(shelter_data_hash["phone"]),
-    email: is_nil?(shelter_data_hash["email"])
-  )
-
-  saved_pet.shelter = saved_shelter
-
-  User.find_by(id: user_id).pets << saved_pet
 end
 
 def define_the_search(user_id)
@@ -409,7 +478,8 @@ def define_the_search(user_id)
       run_a_search_by_location(user_id)
     end
   else
-    puts "Invalid input - please select one of the options above".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     define_the_search(user_id)
   end
 
@@ -435,7 +505,8 @@ def pet_type_menu
       exit!
     end
   else
-    puts "Invalid input - please select one of the options above".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     pet_type_menu
   end
 end
@@ -463,9 +534,12 @@ def narrow_your_search(selection, type)
         select_breed_option(type)
       when "5"
         make_generic_pet_request(type)
-      end
     end
-
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    narrow_your_search(selection, type)
+  end
 end
 
 def make_generic_pet_request(type)
@@ -479,6 +553,10 @@ def select_age_option(type)
   age_selection = gets.chomp
   if age_selection.downcase == "baby" || age_selection.downcase == "young" || age_selection.downcase == "adult" || age_selection.downcase == "senior"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&age=#{age_selection.downcase.capitalize}&format=json")
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    select_age_option(type)
   end
 end
 
@@ -489,6 +567,10 @@ def select_size_option(type)
   size_selection = gets.chomp
   if size_selection.upcase == "S" || size_selection.upcase  == "M" || size_selection.upcase  == "L" || size_selection.upcase  == "XL"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&size=#{size_selection.upcase}&format=json")
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    select_size_option(type)
   end
 end
 
@@ -499,6 +581,10 @@ def select_sex_option(type)
   sex_selection = gets.chomp
   if sex_selection.upcase == "M" || sex_selection.upcase == "F"
     make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&sex=#{sex_selection.upcase}&format=json")
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    select_sex_option(type)
   end
 end
 
@@ -514,7 +600,8 @@ def select_breed_option(type)
       make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&breed=#{change_breed_name_to_url_friendly(counter_and_breed_hash[breed_selection.to_i])}&format=json")
     end
   else
-    puts "Invalid selection, please select a valid option.".red
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
     select_breed_option(type)
   end
 end
@@ -522,6 +609,7 @@ end
 def display_breed_list(breed_list)
   counter = 1
   breed_list_hash = {}
+  puts "\n"
   breed_list["petfinder"]["breeds"]["breed"].map do |breed|
     puts "#{counter}. #{breed["$t"]}"
     breed_list_hash[counter] = breed["$t"]
@@ -558,6 +646,10 @@ def saved_menu(user_id)
       puts "Goodbye!".blue
       exit!
     end
+  else
+    puts "\n"
+    puts "Invalid input - please enter a valid option.".red
+    saved_menu(user_id)
   end
 end
 
