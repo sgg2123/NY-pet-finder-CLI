@@ -13,8 +13,8 @@ end
 
 def sign_up_or_log_in
   puts "\n"
-  puts "Is this your first time here or do you have a username?".blue
-  puts "-------------------------------------------------------".blue
+  puts "Please sign up or login.".blue
+  puts "------------------------".blue
   puts "1 - Sign Up"
   puts "2 - Login"
   puts "3 - exit"
@@ -39,12 +39,13 @@ end
 
 def find_existing_user
   puts "\n"
-  puts "Please enter your username. System is case sensitive.".blue
-  puts "-----------------------------------------------------".blue
+  puts "Please enter your username.".blue
+  puts "System is case sensitive.".blue.italic
+  puts "---------------------------".blue
   input = gets.chomp
   if User.find_by(name: input)
     username = User.find_by(name: input)
-    puts "\nWelcome back #{username.name}. Your UserId is #{username.id}.\n".blue
+    puts "\nWelcome back #{username.name}.\n".blue
     username.id
   else
     puts "\n"
@@ -56,11 +57,12 @@ end
 def create_new_user
   puts "\n"
   puts "Please enter your desired username.".blue
+  puts "System is case sensitive.".blue.italic
   puts "-----------------------------------".blue
   input = gets.chomp
   if !User.find_by(name: input)
     username = User.create(name: input)
-    puts "\nWelcome #{username.name}. Your UserId is #{username.id}.\n".blue
+    puts "\nWelcome #{username.name}.\n".blue
     username.id
   else
     puts "\n"
@@ -256,6 +258,8 @@ def display_pet_name(hash)
       puts "-- breed(s): #{breed_array(array)}"
       puts "-- size: #{array["size"]["$t"]}"
       puts "-- age: #{array["age"]["$t"]}"
+      puts "-- city: #{array["contact"]["city"]["$t"]}"
+###########################################################################################################################
       puts "\n"
       counter += 1
     end
@@ -297,13 +301,14 @@ end
 
 def get_pet_selection(user_id, pet_id_hash)
   puts "\n"
-  puts "Please select a pet by number to view more details for this pet".blue
-  puts "---------------------------------------------------------------".blue
+  puts "Please select a pet by number to view more details for this pet.".blue
+  puts "----------------------------------------------------------------".blue
   pet_selection = gets.chomp
   if valid_input?(pet_selection, pet_id_hash.length+2)
     if valid_input?(pet_selection, pet_id_hash.length)
       pet_id_hash[pet_selection.to_i]
     elsif pet_selection.to_i == pet_id_hash.length+1
+      puts "\n"
       puts "Returning to main menu".blue
       puts "----------------------".blue
       puts "\n"
@@ -340,7 +345,10 @@ def display_detailed_pet_info(hash)
   puts "-- phone: #{is_nil?(hash["petfinder"]["pet"]["contact"]["phone"])}"
   puts "-- email: #{is_nil?(hash["petfinder"]["pet"]["contact"]["email"])}"
   puts "-- street address: #{is_nil?(hash["petfinder"]["pet"]["contact"]["address"])}"
-
+  puts "-- city: #{is_nil?(hash["petfinder"]["pet"]["contact"]["city"])}"
+  puts "-- state: #{is_nil?(hash["petfinder"]["pet"]["contact"]["state"])}"
+  puts "-- zip: #{is_nil?(hash["petfinder"]["pet"]["contact"]["zip"])}"
+#########################################################################################################
 
   would_you_like_to_open_pictures?(hash)
 end
@@ -456,8 +464,10 @@ def save_a_pet(user_id, pet_id)
 
   if !User.find_by(id: user_id).pets.include?(saved_pet)
     User.find_by(id: user_id).pets << saved_pet
-    puts "Pet saved!".blue
+    puts "\n"
+    puts "Pet saved!".green
   else
+    puts "\n"
     puts "You have already saved this pet.".blue
   end
 
@@ -519,7 +529,7 @@ def narrow_your_search(selection, type)
   puts "2 - Sex (M, F)"
   puts "3 - Size (S, M, L, XL)"
   puts "4 - Breed (Select from List)"
-  puts "5 - Don't narrow my search! Display Top 25 Pets in the NYC Area"
+  puts "5 - Don't narrow my search! Display a list of 25 pets in the NYC area."
   puts "\n"
   selection_input = gets.chomp
   if valid_input?(selection_input, 5)
@@ -592,8 +602,9 @@ def select_breed_option(type)
   breed_list = make_request("http://api.petfinder.com/breed.list?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY&#{type}&format=json")
   counter_and_breed_hash = display_breed_list(breed_list)
   puts "\n"
-  puts "Please enter a number for the breed you would like to search for".blue
-  puts "----------------------------------------------------------------".blue
+  puts "Please enter a number for the breed you would like to search for.".blue
+  puts "Please note if pets of your selected breed are not currently available in NYC, pets closest to the area will be listed.".blue.italic
+  puts "-----------------------------------------------------------------------------------------------------------------------".blue
   breed_selection = gets.chomp
   if valid_input?(breed_selection, counter_and_breed_hash.length)
     if breed_selection.to_i.between?(1,counter_and_breed_hash.length)
@@ -687,9 +698,9 @@ def view_saved_shelters(user_id)
   user = User.find(user_id)
   rows = []
   user.pets.map do |pet|
-    rows << [pet.name, pet.shelter.name, pet.shelter.city, pet.shelter.state, pet.shelter.phone, pet.shelter.email]
+    rows << [pet.name, pet.shelter.name, pet.shelter.street_address, pet.shelter.city, pet.shelter.state, pet.shelter.phone, pet.shelter.email]
   end
-  table = Terminal::Table.new :title => "SHELTERS FOR SAVED PETS", :headings => ['Pet Name', 'Shelter Name', 'City', 'State', 'Phone', 'Email'], :rows => rows
+  table = Terminal::Table.new :title => "SHELTERS FOR SAVED PETS", :headings => ['Pet Name', 'Shelter Name', 'Address', 'City', 'State', 'Phone', 'Email'], :rows => rows
   puts "\n"
   puts table
   puts "\n"

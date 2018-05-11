@@ -19,10 +19,11 @@ The user can also access their saved pets after "logging in":
 ## How to Install & Run Program
 
 1. Fork and clone this repository to your local environment.
-2. Navigate to the file directory from your Terminal.
+2. Navigate to the file directory from your terminal.
 3. First, run 'bundle install' to install all required gems.
 4. Run 'ruby bin/run.rb' to access the command line application.
 5. Follow the prompts to execute searches or save data as a user.
+  * Note that if you select to view a pet photo, a separate browser window will open and you will need to return to your terminal to resume the program.
 
 ## A Contributors Guide
 
