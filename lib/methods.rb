@@ -419,8 +419,6 @@ def save_a_pet(user_id, pet_id)
 
   pet_data_hash = pet_data["petfinder"]["pet"]
 
-  # binding.pry
-
   if !Pet.find_by(api_pet_id: pet_id)
     saved_pet = Pet.create(
       name: is_nil?(pet_data_hash["name"]),
