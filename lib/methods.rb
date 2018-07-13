@@ -4,6 +4,9 @@ require 'pry'
 require 'colorize'
 require 'terminal-table'
 require 'launchy'
+require 'dotenv'
+
+Dotenv.load('fileone.env')
 
 def welcome
   puts "-----------------------------------------".blue
@@ -203,7 +206,7 @@ end
 
 def shelter_menu(borough)
   to_interpolate = borough_to_url_string(borough)
-  data = make_request("http://api.petfinder.com/shelter.find?key=1201cf858e44c5465a854617015774a5&location=#{to_interpolate}&format=json")
+  data = make_request("http://api.petfinder.com/shelter.find?key=#{ENV['SECRET_KEY']}&location=#{to_interpolate}&format=json")
 end
 
 def display_shelter_name(hash)
@@ -296,7 +299,7 @@ def get_shelter_selection(user_id, shelter_id_hash)
 end
 
 def get_pets_from_shelter(shelter_id)
-  make_request("http://api.petfinder.com/shelter.getPets?key=1201cf858e44c5465a854617015774a5&id=#{shelter_id}&format=json")
+  make_request("http://api.petfinder.com/shelter.getPets?key=#{ENV['SECRET_KEY']}&id=#{shelter_id}&format=json")
 end
 
 def get_pet_selection(user_id, pet_id_hash)
@@ -326,7 +329,7 @@ def get_pet_selection(user_id, pet_id_hash)
 end
 
 def get_specific_pet_record(pet_id)
-  make_request("http://api.petfinder.com/pet.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_id}&format=json")
+  make_request("http://api.petfinder.com/pet.get?key=#{ENV['SECRET_KEY']}&id=#{pet_id}&format=json")
 end
 
 def display_detailed_pet_info(hash)
@@ -415,7 +418,7 @@ def is_nil?(values)
 end
 
 def save_a_pet(user_id, pet_id)
-  pet_data = make_request("http://api.petfinder.com/pet.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_id}&format=json")
+  pet_data = make_request("http://api.petfinder.com/pet.get?key=#{ENV['SECRET_KEY']}&id=#{pet_id}&format=json")
 
   pet_data_hash = pet_data["petfinder"]["pet"]
 
@@ -441,7 +444,7 @@ def save_a_pet(user_id, pet_id)
       saved_pet.breeds << Breed.find_or_create_by(name: "#{breed_values["$t"]}")
     end
 
-    shelter_data = make_request("http://api.petfinder.com/shelter.get?key=1201cf858e44c5465a854617015774a5&id=#{pet_data["petfinder"]["pet"]["shelterId"]["$t"]}&format=json")
+    shelter_data = make_request("http://api.petfinder.com/shelter.get?key=#{ENV['SECRET_KEY']}&id=#{pet_data["petfinder"]["pet"]["shelterId"]["$t"]}&format=json")
     shelter_data_hash = shelter_data["petfinder"]["shelter"]
 
     saved_shelter = Shelter.find_or_create_by(
@@ -551,7 +554,8 @@ def narrow_your_search(selection, type)
 end
 
 def make_generic_pet_request(type)
-  make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&format=json")
+  puts "http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&format=json"
+  make_request("http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&format=json")
 end
 
 def select_age_option(type)
@@ -560,7 +564,7 @@ def select_age_option(type)
   puts "---------------------------------------------------------------------".blue
   age_selection = gets.chomp
   if age_selection.downcase == "baby" || age_selection.downcase == "young" || age_selection.downcase == "adult" || age_selection.downcase == "senior"
-    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&age=#{age_selection.downcase.capitalize}&format=json")
+    make_request("http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&age=#{age_selection.downcase.capitalize}&format=json")
   else
     puts "\n"
     puts "Invalid input - please enter a valid option.".red
@@ -574,7 +578,7 @@ def select_size_option(type)
   puts "------------------------------------------------------".blue
   size_selection = gets.chomp
   if size_selection.upcase == "S" || size_selection.upcase  == "M" || size_selection.upcase  == "L" || size_selection.upcase  == "XL"
-    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&size=#{size_selection.upcase}&format=json")
+    make_request("http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&size=#{size_selection.upcase}&format=json")
   else
     puts "\n"
     puts "Invalid input - please enter a valid option.".red
@@ -588,7 +592,7 @@ def select_sex_option(type)
   puts "-----------------------------------------------".blue
   sex_selection = gets.chomp
   if sex_selection.upcase == "M" || sex_selection.upcase == "F"
-    make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&sex=#{sex_selection.upcase}&format=json")
+    make_request("http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&sex=#{sex_selection.upcase}&format=json")
   else
     puts "\n"
     puts "Invalid input - please enter a valid option.".red
@@ -597,7 +601,7 @@ def select_sex_option(type)
 end
 
 def select_breed_option(type)
-  breed_list = make_request("http://api.petfinder.com/breed.list?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY&#{type}&format=json")
+  breed_list = make_request("http://api.petfinder.com/breed.list?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY&#{type}&format=json")
   counter_and_breed_hash = display_breed_list(breed_list)
   puts "\n"
   puts "Please enter a number for the breed you would like to search for.".blue
@@ -606,7 +610,7 @@ def select_breed_option(type)
   breed_selection = gets.chomp
   if valid_input?(breed_selection, counter_and_breed_hash.length)
     if breed_selection.to_i.between?(1,counter_and_breed_hash.length)
-      make_request("http://api.petfinder.com/pet.find?key=1201cf858e44c5465a854617015774a5&location=New%20York%20NY#{type}&breed=#{change_breed_name_to_url_friendly(counter_and_breed_hash[breed_selection.to_i])}&format=json")
+      make_request("http://api.petfinder.com/pet.find?key=#{ENV['SECRET_KEY']}&location=New%20York%20NY#{type}&breed=#{change_breed_name_to_url_friendly(counter_and_breed_hash[breed_selection.to_i])}&format=json")
     end
   else
     puts "\n"

@@ -20,6 +20,9 @@ GEM
     concurrent-ruby (1.0.5)
     domain_name (0.5.20180417)
       unf (>= 0.0.5, < 1.0.0)
+    dotenv (2.0.1)
+    dotenv-rails (2.0.1)
+      dotenv (= 2.0.1)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
     i18n (0.8.1)
@@ -70,6 +73,7 @@ PLATFORMS
 
 DEPENDENCIES
   colorize
+  dotenv-rails
   json
   launchy
   pry
