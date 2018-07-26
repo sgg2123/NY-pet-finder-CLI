@@ -19,3 +19,5 @@ The user can also access their saved pets after logging in and authenticating:
 4. Run 'ruby bin/run.rb' to access the command line application.
 5. Follow the prompts to execute searches or save data as a user.
   * Note that if you select to view a pet photo, a separate browser window will open and you will need to return to your terminal to resume the program.
+
+To see an example user workflow, watch the [demo video](https://www.youtube.com/watch?v=-OzCJcwztQs).
